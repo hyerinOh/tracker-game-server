@@ -13,7 +13,7 @@ const server = require('http').createServer(app);
 // http server를 socket.io server 로 upgragde
 
 app.get('/game', (req, res) => {
-  res.send({ message: ok});
+  res.send({ message: ok });
 });
 
 // 웹 소켓 서버 실행
@@ -46,6 +46,7 @@ io.on('connection', (socket) => {
         console.log('11111111',userInfo[rooms[roomId].userId[1]])
         io.to(rooms[roomId].userId[0]).emit('target', userInfo[rooms[roomId].userId[1]]);
         io.to(rooms[roomId].userId[1]).emit('target', userInfo[rooms[roomId].userId[0]]);
+        console.log('room exists', rooms)
         return;
       }      
     }
@@ -61,6 +62,7 @@ io.on('connection', (socket) => {
       id: socket.client.id,
       roomId: `room${roomIndex}`
     } 
+    console.log('no room', rooms)
   });
 
   // socket.on('location', (location) => {
@@ -99,21 +101,19 @@ io.on('connection', (socket) => {
     
   // })
 
-  // socket.on('winner', (winner) => {
-  //   io.emit('who', winner)
-  // })
+  socket.on('winner', (winner) => {
+    io.emit('who', winner)
+  })
 
-  //  socket.on('disconnect', (reason) => {
-  //     if (reason === 'transport close') {
-  //       count--;
-  //       console.log('Got disconnect!');
-  //       console.log('count', count)
-  //       const i = allClients.indexOf(socket.client.id);
-  //       allClients.splice(i, 1);
-  //     }
-  //     console.log(socket.client.id, '<<< 여기여기');
-  //     console.log(allClients)
-  //  });
+   socket.on('disconnect', (reason) => {
+    if (reason === 'transport close') {
+      console.log('Got disconnect!');
+      const i = allClients.indexOf(socket.client.id);
+      allClients.splice(i, 1);
+    }
+    console.log(socket.client.id, '<<< 여기여기');
+    console.log(allClients)
+   });
 });
 
 // ip : 192.168.0.53
