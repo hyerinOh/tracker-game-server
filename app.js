@@ -1,41 +1,37 @@
-const fs = require('fs');
+// const fs = require('fs');
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
+const socketio = require('socket.io');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 
 const app = express();
 const server = require('http').createServer(app);
-// http server를 socket.io server 로 upgragde
 
 app.get('/game', (req, res) => {
   res.send({ message: ok });
 });
 
-// 웹 소켓 서버 실행
-const socketio = require('socket.io');
 const io = socketio.listen(server);
-let count = 0;
 server.listen(3001);
-const allClients = [];
 const userInfo = {};
 const rooms = {};
 let roomIndex = 0;
+let roomId;
 
 io.on('connection', (socket) => {
-  console.log('사용자 접속', socket.client.id);
+
+  // 방 만들기
   socket.on('requestRoom', (userNameAndPhto) => {
-    console.log('!!!!!!!')
-    for (let roomId in rooms) {
+    // 방에 한 명이라도 있을 때
+    for (roomId in rooms) {
       if (rooms[roomId].userId.length === 1) {
         socket.join(roomId);
-
         rooms[roomId].userId.push(socket.client.id);
-        
         userInfo[socket.client.id] = {
           ...userNameAndPhto,
           id: socket.client.id,
@@ -43,27 +39,33 @@ io.on('connection', (socket) => {
         }
 
         io.sockets.in(roomId).emit('completeMatch', 'game match');
-        console.log('11111111',userInfo[rooms[roomId].userId[1]])
         io.to(rooms[roomId].userId[0]).emit('target', userInfo[rooms[roomId].userId[1]]);
         io.to(rooms[roomId].userId[1]).emit('target', userInfo[rooms[roomId].userId[0]]);
-        console.log('room exists', rooms)
         return;
-      }      
+      }
     }
 
+    // 방 없을 때
     socket.join(`room${++roomIndex}`);
 
     rooms[`room${roomIndex}`] = {
-      userId: [socket.client.id]
-    }
+      userId: [socket.client.id],
+    };
 
     userInfo[socket.client.id] = {
       ...userNameAndPhto,
       id: socket.client.id,
-      roomId: `room${roomIndex}`
-    } 
-    console.log('no room', rooms)
+      roomId: `room${roomIndex}`,
+    };
   });
+
+  socket.on('removeRoom', (currRoomId) => {
+    if (rooms[currRoomId]) {
+      socket.leave(currRoomId);
+      delete rooms[currRoomId];
+    }
+  });
+
 
   // socket.on('location', (location) => {
   //   console.log(location);
@@ -98,22 +100,20 @@ io.on('connection', (socket) => {
   //     io.to(forP2.id).emit('quiz', forP1);
   //     io.to(forP1.id).emit('quiz', forP2);
   //   }
-    
   // })
 
   socket.on('winner', (winner) => {
-    io.emit('who', winner)
-  })
+    io.emit('who', winner);
+  });
 
-   socket.on('disconnect', (reason) => {
+  socket.on('disconnect', (reason) => {
+    // 브라우저 껐을 때
     if (reason === 'transport close') {
       console.log('Got disconnect!');
-      const i = allClients.indexOf(socket.client.id);
-      allClients.splice(i, 1);
+      // const i = allClients.indexOf(socket.client.id);
+      // allClients.splice(i, 1);
     }
-    console.log(socket.client.id, '<<< 여기여기');
-    console.log(allClients)
-   });
+  });
 });
 
 // ip : 192.168.0.53
