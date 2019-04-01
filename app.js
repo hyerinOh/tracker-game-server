@@ -1,4 +1,3 @@
-// const fs = require('fs');
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -24,7 +23,6 @@ let roomIndex = 0;
 let roomId;
 
 io.on('connection', (socket) => {
-
   // 방 만들기
   socket.on('requestRoom', (userNameAndPhto) => {
     // 방에 한 명이라도 있을 때
@@ -35,9 +33,8 @@ io.on('connection', (socket) => {
         userInfo[socket.client.id] = {
           ...userNameAndPhto,
           id: socket.client.id,
-          roomId: roomId
+          roomId: roomId,
         }
-
         io.sockets.in(roomId).emit('completeMatch', 'game match');
         io.to(rooms[roomId].userId[0]).emit('target', userInfo[rooms[roomId].userId[1]]);
         io.to(rooms[roomId].userId[1]).emit('target', userInfo[rooms[roomId].userId[0]]);
@@ -66,42 +63,6 @@ io.on('connection', (socket) => {
     }
   });
 
-
-  // socket.on('location', (location) => {
-  //   console.log(location);
-  //   console.log(allClients);
-  //   const forP1  = {};
-  //   const forP2 = {};
-
-  //   forP2.name = allClients[0].name;
-  //   forP2.id = allClients[0].id;
-  //   // 임시값
-  //   forP2.latitude = 37.491875;
-  //   forP2.longitude = 126.983863;
-
-  //   // 실제 사용 코드
-  //   // forP2.latitude = location.latitude;
-  //   // forP2.longitude = location.longitude;
-
-  //   if (allClients.length === 2) {
-  //     forP1.name = allClients[1].name;
-  //     forP1.id = allClients[1].id;
-
-  //     //임시값
-  //     forP1.latitude = 37.184631;
-  //     forP1.longitude = 127.121022;
-      
-  //     // 실제 사용 코드
-  //     // forP1.latitude = location.latitude;
-  //     // forP1.longitude = location.longitude;
-  //   }
-
-  //   if (Object.keys(forP1).length) {
-  //     io.to(forP2.id).emit('quiz', forP1);
-  //     io.to(forP1.id).emit('quiz', forP2);
-  //   }
-  // })
-
   socket.on('winner', (winner) => {
     io.emit('who', winner);
   });
@@ -110,13 +71,10 @@ io.on('connection', (socket) => {
     // 브라우저 껐을 때
     if (reason === 'transport close') {
       console.log('Got disconnect!');
-      // const i = allClients.indexOf(socket.client.id);
-      // allClients.splice(i, 1);
     }
   });
 });
 
-// ip : 192.168.0.53
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
